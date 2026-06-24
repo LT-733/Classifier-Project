@@ -4,15 +4,20 @@ import torchvision.models as tv_models
 import torch
 import os
 import glob
+import torch
+
+# 1. Try to safely import torch_npu if available
 try:
     import torch_npu
+    HAS_NPU = True
 except ImportError:
-    pass
+    HAS_NPU = False
+
 
 def main():
     model = tv_models.resnet50(weights="DEFAULT")
     # 1. Check for Huawei Ascend NPU
-    if torch.npu.is_available():
+    if HAS_NPU and torch.npu.is_available():
         device = torch.device("npu:0")
     # 2. Check for NVIDIA CUDA GPU
     elif torch.cuda.is_available():
@@ -34,9 +39,10 @@ def main():
         if x.lower() == 'q':
             break
         zone_names.append(x)
-    path_dir = "/home/HwHiAiUser/Developer/Classifier_project/imgs/"
     path_exts = ("*.jpg", "*.jpeg", "*.JPG", "*.JPEG", "*.png")
     paths = []
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    path_dir = os.path.join(current_dir, "..", "imgs")
     for ext in path_exts:
         paths.extend(glob.glob(os.path.join(path_dir, ext)))
     

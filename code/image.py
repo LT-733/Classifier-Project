@@ -4,7 +4,7 @@ import torch.optim as optim
 import torchvision.models as tv_models
 import torchvision.transforms as transforms
 import numpy as np
-import torch_npu
+# import torch_npu
 from PIL import Image
 
 def imageprep(imgPath: str):
