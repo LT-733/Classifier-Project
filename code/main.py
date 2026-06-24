@@ -7,8 +7,21 @@ import glob
 
 def main():
     model = tv_models.resnet50(weights="DEFAULT")
-    device = torch.device("npu:0" if torch.npu.is_available() else "cpu")
-    print(device)
+    # 1. Check for Huawei Ascend NPU
+    if torch.npu.is_available():
+        device = torch.device("npu:0")
+    # 2. Check for NVIDIA CUDA GPU
+    elif torch.cuda.is_available():
+        device = torch.device("cuda:0")
+    # 3. Check for Apple Silicon GPU (if you ever test on a Mac laptop)
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    # 4. Fallback to CPU
+    else:
+        device = torch.device("cpu")
+
+    print(f"Active compute hardware: {device}")
+    # print(device)
     model = model.to(device=device).half()
     zone_names = []
     x = ""
