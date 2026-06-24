@@ -1,2 +1,4 @@
 *.json
 kernel_meta/
+# models too big, don't want to track them
+models/

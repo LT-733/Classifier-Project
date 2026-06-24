@@ -1,0 +1,5 @@
+torch
+torchvision
+sentence-transformers
+requests
+Pillow

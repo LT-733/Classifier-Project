@@ -4,6 +4,10 @@ import torchvision.models as tv_models
 import torch
 import os
 import glob
+try:
+    import torch_npu
+except ImportError:
+    pass
 
 def main():
     model = tv_models.resnet50(weights="DEFAULT")

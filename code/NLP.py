@@ -1,13 +1,36 @@
 import os
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
+import requests
+# os.environ["HF_HUB_OFFLINE"] = "1"
+# os.environ["TRANSFORMERS_OFFLINE"] = "1"
 from sentence_transformers import util, SentenceTransformer
 import torch
 
 class NLProuter():
     def __init__(self) -> None:
         """constructor for the class, initializes the transformer, the list for the item zones, and the embeddings placeholder."""
-        self.model = SentenceTransformer(model_name_or_path="/home/HwHiAiUser/Developer/Classifier_project/models/all-MiniLM-L6-v2")
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        local_path = os.path.join(current_dir, "..", "models", "all-MiniLM-L6-v2")
+        remote_path = "sentence-transformers/all-MiniLM-L6-v2"
+        if os.path.isdir(local_path) and os.listdir(local_path):
+            try:
+                self.model = SentenceTransformer(model_name_or_path=local_path)
+            except Exception as e:
+                print(f"Error trying to use local model, but the model is found: {e}")
+        else:
+            print("local model not found, moving to remote.")
+        if not hasattr(self, "model"):
+            print("trying remote model.")
+            try:
+                self.model = SentenceTransformer(model_name_or_path=remote_path)
+            except (requests.exceptions.HTTPError) as HTTPerror:
+                print(f"internet is here, but Hugging Face threw an error: {HTTPerror} \n likely because the connection cannot be established?")
+                raise SystemExit("Exiting: Remote model asset registry unreachable.")
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as internetError:
+                print(f"Internet is not connected or the request took too long: {internetError}\n maybe check your device's network connection?")
+                raise SystemExit("Exiting: Missing local assets and no internet connectivity.")
+            except Exception as e:
+                print(f"Error finding remote path: {e}")
+                raise e
         self.zone_names = []
         self.zone_embeddings = None
     
