@@ -2,4 +2,4 @@
 Mostly because I am lazy and don't want to train my own model.
 I will use Mindspore in the future. But for now, imagenet is easier with pytorch.
 
-## Remember: run `pip install requirements.txt` first!
+## Remember: run `pip install -r requirements.txt` first!
