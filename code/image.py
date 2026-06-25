@@ -32,7 +32,7 @@ def identification(model, imgPath: str, device):
         max_prob, _ = torch.max(possibilities, dim=1)
         # if(max_prob.item() <= 0.25):
         #     return "unknown"
-        weights = tv_models.ResNet50_Weights.DEFAULT
+        weights = tv_models.ConvNeXt_Tiny_Weights.DEFAULT
         categories = weights.meta["categories"]
         predicted_output = categories[result]
         return predicted_output

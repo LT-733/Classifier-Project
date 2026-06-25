@@ -15,7 +15,7 @@ except ImportError:
 
 
 def main():
-    model = tv_models.resnet50(weights="DEFAULT")
+    model = tv_models.convnext_tiny(weights="DEFAULT")
     # 1. Check for Huawei Ascend NPU
     if HAS_NPU and torch.npu.is_available():
         device = torch.device("npu:0")
