@@ -5,3 +5,4 @@ models/
 #cannot have docker in yet
 ./Dockerfile
 ./Makefile
+temp.jpg
