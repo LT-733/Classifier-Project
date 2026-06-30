@@ -34,6 +34,7 @@ class _InferenceHomeState extends State<InferenceHome> {
     setState(() {
       _isLoading = true;
       _pickedFile = photo;
+      _serverStatus = "Inferencing with HuggingFace API...";
     });
 
     if (kIsWeb) {
@@ -61,63 +62,56 @@ class _InferenceHomeState extends State<InferenceHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("NPU Object Classifier")),
+      appBar: AppBar(title: const Text("Object Classifier"), centerTitle: true),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+            // Preview Box with Contain fit to prevent squashing
+            Container(
+              height: 250,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              clipBehavior: Clip.hardEdge,
               child: (_pickedFile != null)
                   ? (kIsWeb
-                      ? (_webBytes != null
-                          ? Image.memory(_webBytes!, height: 230, width: double.infinity, fit: BoxFit.cover)
-                          : const SizedBox(height: 230))
-                      : Image.file(File(_pickedFile!.path), height: 230, width: double.infinity, fit: BoxFit.cover))
-                  : Container(
-                      height: 230,
-                      color: Colors.grey[200],
-                      child: const Center(child: Icon(Icons.camera_alt, size: 50, color: Colors.grey)),
-                    ),
+                      ? (_webBytes != null ? Image.memory(_webBytes!, fit: BoxFit.contain) : const Center(child: CircularProgressIndicator()))
+                      : Image.file(File(_pickedFile!.path), fit: BoxFit.contain))
+                  : const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.camera_alt, size: 48, color: Colors.grey), Text("No image selected")])),
             ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _zoneController,
-                    decoration: const InputDecoration(hintText: "Add target zone"),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.blue),
-                  onPressed: () {
-                    if (_zoneController.text.trim().isNotEmpty) {
-                      setState(() {
-                        _dynamicZones.add(_zoneController.text.trim());
-                        _zoneController.clear();
-                      });
-                    }
-                  },
-                ),
-              ],
-            ),
-            Wrap(
-              spacing: 8.0,
-              children: _dynamicZones.map((zone) => Chip(
-                label: Text(zone),
-                onDeleted: () => setState(() => _dynamicZones.remove(zone)),
-              )).toList(),
-            ),
-            const SizedBox(height: 25),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : Text(_serverStatus, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 25),
-            ElevatedButton.icon(
-              onPressed: _isLoading ? null : _captureAndPredict,
-              icon: const Icon(Icons.photo_camera),
-              label: const Text("Snap Verification Photo"),
+            const SizedBox(height: 24),
+
+            // Loading overlay instead of just a spinner
+            if (_isLoading)
+              const Column(children: [CircularProgressIndicator(), SizedBox(height: 12), Text("Inferencing with HuggingFace API...", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue))])
+            else
+              Text(_serverStatus, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+
+            const SizedBox(height: 24),
+            Row(children: [
+              Expanded(child: TextField(controller: _zoneController, decoration: const InputDecoration(labelText: "Add target zone", border: OutlineInputBorder()))),
+              const SizedBox(width: 10),
+              IconButton.filled(icon: const Icon(Icons.add), onPressed: () {
+                if (_zoneController.text.trim().isNotEmpty) {
+                  setState(() { _dynamicZones.add(_zoneController.text.trim()); _zoneController.clear(); });
+                }
+              }),
+            ]),
+            const SizedBox(height: 12),
+            Wrap(spacing: 8, children: _dynamicZones.map((zone) => Chip(label: Text(zone), onDeleted: () => setState(() => _dynamicZones.remove(zone)))).toList()),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: _isLoading ? null : _captureAndPredict,
+                icon: const Icon(Icons.camera_enhance),
+                label: const Text("SNAP & CLASSIFY"),
+              ),
             ),
           ],
         ),

@@ -6,3 +6,4 @@ models/
 ./Dockerfile
 ./Makefile
 temp.jpg
+/imgs
