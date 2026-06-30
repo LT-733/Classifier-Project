@@ -32,6 +32,11 @@ func relayHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/predict", relayHandler)
 
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
 	port := os.Getenv("PORT")
 
 	if port == "" {
