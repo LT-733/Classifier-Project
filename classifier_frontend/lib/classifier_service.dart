@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ClassifierService {
-  final String _baseUrl = 'http://192.168.1.41:8000';
+  final String _baseUrl = 'https://ltcai-zone-classifier.hf.space';
 
   /// Sends the selected image and target zones array to the FastAPI NPU pipeline.
   Future<Map<String, dynamic>> predictItem({
