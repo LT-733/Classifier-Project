@@ -6,6 +6,7 @@ import io
 import NLP, image
 import json
 from PIL import Image
+import tempfile
 
 MODEL = None
 ROUTER: NLP.NLProuter = None  # type: ignore
@@ -57,10 +58,12 @@ async def predict_item(
 
     img_bytes = await file.read()
     img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
-    temp_path = "temp.jpg"
-    img.save(temp_path)
+    with tempfile.NamedTemporaryFile(suffix=".jpg") as tmp:
+        img.save(tmp.name)
+        results = image.identification(model=MODEL, imgPath=tmp.name, device=DEVICE)
+    # img.save(temp_path)
 
-    results = image.identification(model=MODEL, imgPath=temp_path, device=DEVICE)
+    # results = image.identification(model=MODEL, imgPath=temp_path, device=DEVICE)
     if results == "unknown":
         return {'status': 'cannot identify', 'message': 'why your camera so chopped lil bro'}
     target_zone = ROUTER.assign_outputs(item=results)
@@ -74,4 +77,4 @@ if __name__ == "__main__":
     import uvicorn
     # This exposes the server to your local network on port 8000
     print("Starting your image inference backend server...")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=7860)

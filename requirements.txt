@@ -1,7 +1,17 @@
+# Web Framework
+fastapi
+uvicorn
+
+
+# AI & Inference stack
+--extra-index-url https://download.pytorch.org/whl/cpu
 torch
 torchvision
 sentence-transformers
+
+# Utilities
+numpy
 requests
 Pillow
-fastapi
-uvicorn
+huggingface_hub
+typing-extensions
