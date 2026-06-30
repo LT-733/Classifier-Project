@@ -8,37 +8,53 @@ import (
 )
 
 func relayHandler(w http.ResponseWriter, r *http.Request) {
-	endpoint := "https://ltcai-zone-classifier.hf.space"
+	// 1. CORS Headers: MANDATORY for browser clients
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	// 2. Pre-flight check: MANDATORY to avoid protocol errors
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	endpoint := "https://ltcai-zone-classifier.hf.space/predict"
+
+	// 3. Proxy Request
 	req, err := http.NewRequest("POST", endpoint, r.Body)
 	if err != nil {
-		http.Error(w, "failed to send request", http.StatusInternalServerError)
+		http.Error(w, "Failed to create request", 500)
 		return
 	}
+
+	// Copy Content-Type only
 	req.Header.Set("Content-Type", r.Header.Get("Content-Type"))
 
-	client := http.Client{}
-	response, error := client.Do(req)
-	if error != nil {
-		http.Error(w, "Failed to communicate with backend", http.StatusBadGateway)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		http.Error(w, "Bad Gateway", 502)
 		return
 	}
-	defer response.Body.Close()
+	defer resp.Body.Close()
 
-	w.WriteHeader(response.StatusCode)
-
-	io.Copy(w, response.Body)
+	// 4. Proxy Response
+	for k, v := range resp.Header {
+		w.Header()[k] = v
+	}
+	w.WriteHeader(resp.StatusCode)
+	io.Copy(w, resp.Body)
 }
 
 func main() {
 	http.HandleFunc("/predict", relayHandler)
-
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
 
 	port := os.Getenv("PORT")
-
 	if port == "" {
 		port = "8080"
 	}
@@ -48,5 +64,4 @@ func main() {
 	if err != nil {
 		fmt.Println("Server Failed: ", err)
 	}
-
 }

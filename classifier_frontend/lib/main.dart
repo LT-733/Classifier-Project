@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'classifier_service.dart';
@@ -16,34 +18,38 @@ class InferenceHome extends StatefulWidget {
 }
 
 class _InferenceHomeState extends State<InferenceHome> {
-  File? _selectedImage;
+  XFile? _pickedFile;
+  Uint8List? _webBytes;
   String _serverStatus = "Ready to classify";
+  bool _isLoading = false;
   final ClassifierService _service = ClassifierService();
-  
   final List<String> _dynamicZones = ['computer desk', 'closet shelf', 'kitchen counter'];
   final TextEditingController _zoneController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _captureAndPredict() async {
-    if (_dynamicZones.isEmpty) {
-      setState(() => _serverStatus = "Error: Add at least one target zone first!");
-      return;
-    }
-
     final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
     if (photo == null) return;
 
     setState(() {
-      _selectedImage = File(photo.path);
-      _serverStatus = "Sending data to Orange Pi NPU...";
+      _isLoading = true;
+      _pickedFile = photo;
     });
 
+    if (kIsWeb) {
+      _webBytes = await photo.readAsBytes();
+    }
+
     final result = await _service.predictItem(
-      imageFile: _selectedImage!,
+      imageFile: kIsWeb ? null : photo,
+      imageBytes: kIsWeb ? _webBytes : null,
       zones: _dynamicZones,
     );
 
+    if (!mounted) return;
+
     setState(() {
+      _isLoading = false;
       if (result['status'] == 'success') {
         _serverStatus = "Found: ${result['item']}\nRoute to: ${result['assigned_zone']}";
       } else {
@@ -60,29 +66,31 @@ class _InferenceHomeState extends State<InferenceHome> {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            if (_selectedImage != null)
-              Image.file(_selectedImage!, height: 230, fit: BoxFit.cover)
-            else
-              Container(
-                height: 230, 
-                color: Colors.grey[200], 
-                child: const Center(child: Icon(Icons.camera_alt, size: 50, color: Colors.grey))
-              ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: (_pickedFile != null)
+                  ? (kIsWeb
+                      ? (_webBytes != null
+                          ? Image.memory(_webBytes!, height: 230, width: double.infinity, fit: BoxFit.cover)
+                          : const SizedBox(height: 230))
+                      : Image.file(File(_pickedFile!.path), height: 230, width: double.infinity, fit: BoxFit.cover))
+                  : Container(
+                      height: 230,
+                      color: Colors.grey[200],
+                      child: const Center(child: Icon(Icons.camera_alt, size: 50, color: Colors.grey)),
+                    ),
+            ),
             const SizedBox(height: 20),
-            
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _zoneController,
-                    decoration: const InputDecoration(
-                      hintText: "Add target zone (e.g., bedroom)",
-                      border: UnderlineInputBorder(),
-                    ),
+                    decoration: const InputDecoration(hintText: "Add target zone"),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.blue, size: 28),
+                  icon: const Icon(Icons.add_circle, color: Colors.blue),
                   onPressed: () {
                     if (_zoneController.text.trim().isNotEmpty) {
                       setState(() {
@@ -94,27 +102,20 @@ class _InferenceHomeState extends State<InferenceHome> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            
             Wrap(
               spacing: 8.0,
-              runSpacing: 4.0,
               children: _dynamicZones.map((zone) => Chip(
                 label: Text(zone),
                 onDeleted: () => setState(() => _dynamicZones.remove(zone)),
               )).toList(),
             ),
-            
             const SizedBox(height: 25),
-            Text(
-              _serverStatus, 
-              textAlign: TextAlign.center, 
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
-            ),
+            _isLoading
+                ? const CircularProgressIndicator()
+                : Text(_serverStatus, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 25),
             ElevatedButton.icon(
-              onPressed: _captureAndPredict,
-              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
+              onPressed: _isLoading ? null : _captureAndPredict,
               icon: const Icon(Icons.photo_camera),
               label: const Text("Snap Verification Photo"),
             ),

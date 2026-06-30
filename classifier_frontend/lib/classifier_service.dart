@@ -1,57 +1,45 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
 class ClassifierService {
-  final String _baseUrl = 'https://ltcai-zone-classifier.hf.space';
+  final String _baseUrl = 'https://classifier-project-production.up.railway.app';
 
-  /// Sends the selected image and target zones array to the FastAPI NPU pipeline.
   Future<Map<String, dynamic>> predictItem({
-    required File imageFile,
+    XFile? imageFile,
+    Uint8List? imageBytes,
     required List<String> zones,
   }) async {
     final uri = Uri.parse('$_baseUrl/predict');
     final request = http.MultipartRequest('POST', uri);
 
     try {
-      final stream = http.ByteStream(imageFile.openRead());
-      final length = await imageFile.length();
-      
-      final multipartFile = http.MultipartFile(
-        'file',
-        stream,
-        length,
-        filename: imageFile.path.split('/').last,
-      );
-      request.files.add(multipartFile);
+      if (imageBytes != null) {
+        request.files.add(http.MultipartFile.fromBytes(
+          'file',
+          imageBytes,
+          filename: 'upload.jpg',
+        ));
+      } else if (imageFile != null) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'file',
+          imageFile.path,
+        ));
+      }
 
       request.fields['zones'] = jsonEncode(zones);
 
-      print('Dispatched multipart request to $_baseUrl/predict...');
-      
-      // Connection/upload timeout window extended to 60 seconds
-      final streamedResponse = await request.send().timeout(
-        const Duration(minutes: 5),
-      );
-      
-      // Extraction timeout window extended to 60 seconds
-      final response = await http.Response.fromStream(streamedResponse).timeout(
-        const Duration(minutes: 5),
-      );
+      final streamedResponse = await request.send().timeout(const Duration(minutes: 5));
+      final response = await http.Response.fromStream(streamedResponse).timeout(const Duration(minutes: 5));
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
-        return {
-          'status': 'error',
-          'message': 'Backend execution failed with code: ${response.statusCode}',
-        };
+        return {'status': 'error', 'message': 'Backend error: ${response.statusCode}'};
       }
     } catch (e) {
-      return {
-        'status': 'error',
-        'message': 'Failed to communicate with NPU server: $e',
-      };
+      return {'status': 'error', 'message': 'Connection error: $e'};
     }
   }
 }
