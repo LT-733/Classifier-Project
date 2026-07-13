@@ -8,6 +8,9 @@ This is what the website looks like:
 <img width="1512" height="859" alt="image" src="https://github.com/user-attachments/assets/af552dee-0d8b-4dcf-964b-c63e5bb2d03f" />
 
 
+### I will add the architecture of this website whenever I feel like it.
+**Also believe it or not it's an app (hence flutter because I could've used react), but I am too lazy to get it onto app store and no one will really download this app to eat up their storage.**
+
 ## Remember: if you want to try out the source files yourself, run `pip install -r requirements.txt` first!
 
 _I may or may not have used uptimerobot to ping my railway and huggingface server once in a while so that the service keeps running... Not like anyone is acc going to use this website though._
