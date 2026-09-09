@@ -4,7 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 class ClassifierService {
-  final String _baseUrl = 'https://classifier-project-production.up.railway.app';
+  // final String _baseUrl = 'https://classifier-project-production.up.railway.app';
+  final String _baseUrl = 'https://classifier-project-theta.vercel.app';
 
   Future<Map<String, dynamic>> predictItem({
     XFile? imageFile,
